@@ -54,43 +54,46 @@ const exercises = [
 const STORAGE_KEY = "bodymakeRecords";
 const TIMER_SECONDS = 10 * 60;
 
-const exerciseList = document.getElementById("exerciseList");
-const timerDisplay = document.getElementById("timerDisplay");
-const startButton = document.getElementById("startButton");
-const pauseButton = document.getElementById("pauseButton");
-const resetButton = document.getElementById("resetButton");
-const doneToday = document.getElementById("doneToday");
-const weeklyCount = document.getElementById("weeklyCount");
-
 let remainingSeconds = TIMER_SECONDS;
 let timerId = null;
+let elements = {};
+
+function createElement(tagName, className, text) {
+  const element = document.createElement(tagName);
+  if (className) element.className = className;
+  if (text !== undefined) element.textContent = text;
+  return element;
+}
 
 function renderExercises() {
-  exerciseList.innerHTML = exercises.map((exercise, index) => {
-    return "<article class="exercise-card reveal">" +
-      "<div class="exercise-top">" +
-        "<div>" +
-          "<h3>" + exercise.name + "</h3>" +
-          "<p class="purpose">目的：" + exercise.purpose + "</p>" +
-        "</div>" +
-        "<span class="exercise-number">" + (index + 1) + "</span>" +
-      "</div>" +
-      "<dl class="detail-list">" +
-        "<div class="detail-row">" +
-          "<dt>回数</dt>" +
-          "<dd>" + exercise.reps + "</dd>" +
-        "</div>" +
-        "<div class="detail-row">" +
-          "<dt>ポイント</dt>" +
-          "<dd>" + exercise.point + "</dd>" +
-        "</div>" +
-        "<div class="detail-row">" +
-          "<dt>注意点</dt>" +
-          "<dd>" + exercise.caution + "</dd>" +
-        "</div>" +
-      "</dl>" +
-    "</article>";
-  }).join("");
+  elements.exerciseList.innerHTML = "";
+
+  // HTML文字列ではなくDOM APIで作ることで、クォート崩れによる構文エラーを防ぎます。
+  exercises.forEach((exercise, index) => {
+    const card = createElement("article", "exercise-card");
+    const top = createElement("div", "exercise-top");
+    const titleArea = createElement("div");
+    const title = createElement("h3", "", exercise.name);
+    const purpose = createElement("p", "purpose", "目的：" + exercise.purpose);
+    const number = createElement("span", "exercise-number", String(index + 1));
+    const detailList = createElement("dl", "detail-list");
+
+    titleArea.append(title, purpose);
+    top.append(titleArea, number);
+
+    addDetailRow(detailList, "回数", exercise.reps);
+    addDetailRow(detailList, "ポイント", exercise.point);
+    addDetailRow(detailList, "注意点", exercise.caution);
+
+    card.append(top, detailList);
+    elements.exerciseList.appendChild(card);
+  });
+}
+
+function addDetailRow(parent, label, value) {
+  const row = createElement("div", "detail-row");
+  row.append(createElement("dt", "", label), createElement("dd", "", value));
+  parent.appendChild(row);
 }
 
 function formatTime(totalSeconds) {
@@ -100,7 +103,7 @@ function formatTime(totalSeconds) {
 }
 
 function updateTimerDisplay() {
-  timerDisplay.textContent = formatTime(remainingSeconds);
+  elements.timerDisplay.textContent = formatTime(remainingSeconds);
 }
 
 function startTimer() {
@@ -129,7 +132,6 @@ function resetTimer() {
   updateTimerDisplay();
 }
 
-// 日付キーはブラウザの地域設定に合わせて保存します。
 function getLocalDateKey(date = new Date()) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -138,12 +140,21 @@ function getLocalDateKey(date = new Date()) {
 }
 
 function loadRecords() {
-  const savedRecords = localStorage.getItem(STORAGE_KEY);
-  return savedRecords ? JSON.parse(savedRecords) : {};
+  try {
+    const savedRecords = localStorage.getItem(STORAGE_KEY);
+    return savedRecords ? JSON.parse(savedRecords) : {};
+  } catch (error) {
+    console.warn("記録の読み込みに失敗しました。", error);
+    return {};
+  }
 }
 
 function saveRecords(records) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  } catch (error) {
+    console.warn("記録の保存に失敗しました。", error);
+  }
 }
 
 function getStartOfWeek(date) {
@@ -168,24 +179,25 @@ function updateWeeklyCount() {
     }
   });
 
-  weeklyCount.textContent = count;
+  elements.weeklyCount.textContent = count;
 }
 
 function updateTodayCheck() {
   const records = loadRecords();
-  doneToday.checked = Boolean(records[getLocalDateKey()]);
+  elements.doneToday.checked = Boolean(records[getLocalDateKey()]);
   updateWeeklyCount();
 }
 
 function toggleTodayRecord() {
   const records = loadRecords();
-  records[getLocalDateKey()] = doneToday.checked;
+  records[getLocalDateKey()] = elements.doneToday.checked;
   saveRecords(records);
   updateWeeklyCount();
 }
 
 function setupRevealAnimation() {
   const targets = document.querySelectorAll(".reveal");
+  document.body.classList.add("animations-ready");
 
   if (!("IntersectionObserver" in window)) {
     targets.forEach((target) => target.classList.add("is-visible"));
@@ -199,17 +211,55 @@ function setupRevealAnimation() {
         observer.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.16 });
+  }, { threshold: 0.12 });
 
   targets.forEach((target) => observer.observe(target));
 }
 
-renderExercises();
-updateTimerDisplay();
-updateTodayCheck();
-setupRevealAnimation();
+function showContentIfError() {
+  document.body.classList.remove("animations-ready");
+  document.querySelectorAll(".reveal").forEach((target) => {
+    target.classList.add("is-visible");
+  });
+}
 
-startButton.addEventListener("click", startTimer);
-pauseButton.addEventListener("click", pauseTimer);
-resetButton.addEventListener("click", resetTimer);
-doneToday.addEventListener("change", toggleTodayRecord);
+function initApp() {
+  elements = {
+    exerciseList: document.getElementById("exerciseList"),
+    timerDisplay: document.getElementById("timerDisplay"),
+    startButton: document.getElementById("startButton"),
+    pauseButton: document.getElementById("pauseButton"),
+    resetButton: document.getElementById("resetButton"),
+    doneToday: document.getElementById("doneToday"),
+    weeklyCount: document.getElementById("weeklyCount")
+  };
+
+  if (Object.values(elements).some((element) => !element)) {
+    throw new Error("必要な画面要素が見つかりません。");
+  }
+
+  renderExercises();
+  updateTimerDisplay();
+  updateTodayCheck();
+  setupRevealAnimation();
+
+  elements.startButton.addEventListener("click", startTimer);
+  elements.pauseButton.addEventListener("click", pauseTimer);
+  elements.resetButton.addEventListener("click", resetTimer);
+  elements.doneToday.addEventListener("change", toggleTodayRecord);
+}
+
+function boot() {
+  try {
+    initApp();
+  } catch (error) {
+    console.error("アプリの初期化に失敗しました。", error);
+    showContentIfError();
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", boot);
+} else {
+  boot();
+}
