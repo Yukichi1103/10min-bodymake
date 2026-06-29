@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>10分ボディメイク</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero reveal">
+      <p class="eyebrow">自宅でできる初心者向け10分メニュー</p>
+      <h1>10分ボディメイク</h1>
+      <p class="lead">
+        お尻・胸まわり・骨盤底筋・軽い有酸素を1日10分で無理なく整えるボディメイクアプリです。
+      </p>
+    </section>
+
+    <section class="status-grid" aria-label="今日の進捗">
+      <div class="status-panel timer-panel reveal">
+        <div class="timer-copy">
+          <p class="panel-label">今日のタイマー</p>
+          <p id="timerDisplay" class="timer-display">10:00</p>
+        </div>
+        <div class="timer-buttons" aria-label="タイマー操作">
+          <button id="startButton" class="primary-button" type="button">スタート</button>
+          <button id="pauseButton" class="secondary-button" type="button">一時停止</button>
+          <button id="resetButton" class="secondary-button" type="button">リセット</button>
+        </div>
+      </div>
+
+      <div class="status-panel check-panel reveal">
+        <p class="panel-label">今日の記録</p>
+        <label class="done-check">
+          <input id="doneToday" type="checkbox">
+          <span>今日やった</span>
+        </label>
+        <p class="week-count">
+          今週の達成回数：<strong id="weeklyCount">0</strong>回
+        </p>
+      </div>
+    </section>
+
+    <section class="notice reveal" aria-label="注意文">
+      <h2>無理しないために</h2>
+      <p>
+        体調には個人差があります。痛み、尿漏れ、骨盤の違和感、膣に何か下がる感じがある場合は無理せず中止し、婦人科や理学療法士に相談してください。
+      </p>
+    </section>
+
+    <section class="menu-section reveal" aria-labelledby="menuTitle">
+      <div class="section-heading">
+        <p class="panel-label">1日10分メニュー</p>
+        <h2 id="menuTitle">今日の種目</h2>
+      </div>
+
+      <div id="exerciseList" class="exercise-grid"></div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
